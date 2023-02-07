@@ -61,9 +61,10 @@ def test_unsupervisedtree():
     # a single decision tree does not fit well, but should still have a positive score
     assert score > 0.05
 
-def test_iris():
+@pytest.mark.parametrize("name,Tree", CLF_TREES.items())
+def test_iris(name, Tree):
     # Check consistency on dataset iris.
-    for (name, Tree), criterion in product(CLF_TREES.items(), CLF_CRITERIONS):
+    for criterion in CLF_CRITERIONS:
         clf = Tree(criterion=criterion, random_state=0)
         clf.fit(iris.data, iris.target)
         score = accuracy_score(clf.predict(iris.data), iris.target)
