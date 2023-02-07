@@ -4,9 +4,25 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 from sklearn.utils.estimator_checks import parametrize_with_checks
+from itertools import product, chain
+from sklearn import datasets
+from sklearn.metrics import accuracy_score
 
 from sktree.tree import UnsupervisedDecisionTree
 
+CLF_CRITERIONS = ("twomeans", "fastbic")
+
+CLF_TREES = {
+    "UnsupervisedDecisionTree": UnsupervisedDecisionTree,
+}
+
+# also load the iris dataset
+# and randomly permute it
+iris = datasets.load_iris()
+rng = np.random.RandomState(1)
+perm = rng.permutation(iris.target.size)
+iris.data = iris.data[perm]
+iris.target = iris.target[perm]
 
 @parametrize_with_checks([UnsupervisedDecisionTree(random_state=12)])
 def test_sklearn_compatible_estimator(estimator, check):
@@ -44,3 +60,20 @@ def test_unsupervisedtree():
 
     # a single decision tree does not fit well, but should still have a positive score
     assert score > 0.05
+
+def test_iris():
+    # Check consistency on dataset iris.
+    for (name, Tree), criterion in product(CLF_TREES.items(), CLF_CRITERIONS):
+        clf = Tree(criterion=criterion, random_state=0)
+        clf.fit(iris.data, iris.target)
+        score = accuracy_score(clf.predict(iris.data), iris.target)
+        assert score > 0.9, "Failed with {0}, criterion = {1} and score = {2}".format(
+            name, criterion, score
+        )
+
+        clf = Tree(criterion=criterion, max_features=2, random_state=0)
+        clf.fit(iris.data, iris.target)
+        score = accuracy_score(clf.predict(iris.data), iris.target)
+        assert score > 0.5, "Failed with {0}, criterion = {1} and score = {2}".format(
+            name, criterion, score
+        )
