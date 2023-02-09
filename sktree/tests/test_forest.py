@@ -4,9 +4,24 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 from sklearn.utils.estimator_checks import parametrize_with_checks
+from sklearn import datasets
+from sklearn.metrics import accuracy_score
 
 from sktree import UnsupervisedRandomForest
 
+CLF_CRITERIONS = ("twomeans", "fastbic")
+
+FOREST_CLASSIFIERS = {
+    "UnsupervisedRandomForest": UnsupervisedRandomForest,
+}
+
+# also load the iris dataset
+# and randomly permute it
+iris = datasets.load_iris()
+rng = np.random.RandomState(1)
+perm = rng.permutation(iris.target.size)
+iris.data = iris.data[perm]
+iris.target = iris.target[perm]
 
 @parametrize_with_checks([UnsupervisedRandomForest(random_state=12345)])
 def test_sklearn_compatible_estimator(estimator, check):
@@ -41,3 +56,28 @@ def test_urf():
     # XXX: This should be > 0.9 according to the UReRF. Hoewver, that could be because they used
     # the oblique projections by default
     assert score > 0.6
+
+
+def check_iris_criterion(name, criterion):
+    # Check consistency on dataset iris.
+    ForestClassifier = FOREST_CLASSIFIERS[name]
+
+    clf = ForestClassifier(n_estimators=10, criterion=criterion, random_state=1)
+    clf.fit(iris.data, iris.target)
+    score = accuracy_score(clf.predict(iris.data), iris.target)
+    # score = clf.score(iris.data, iris.target)
+    assert score > 0.3, "Failed with criterion %s and score = %f" % (criterion, score)
+
+    clf = ForestClassifier(
+        n_estimators=10, criterion=criterion, max_features=2, random_state=1
+    )
+    clf.fit(iris.data, iris.target)
+    score = accuracy_score(clf.predict(iris.data), iris.target)
+    # score = clf.score(iris.data, iris.target)
+    assert score > 0.2, "Failed with criterion %s and score = %f" % (criterion, score)
+
+
+@pytest.mark.parametrize("name", FOREST_CLASSIFIERS)
+@pytest.mark.parametrize("criterion", ("twomeans", "fastbic"))
+def test_iris(name, criterion):
+    check_iris_criterion(name, criterion)
