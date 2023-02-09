@@ -43,9 +43,9 @@ def test_sklearn_compatible_estimator(estimator, check):
 def test_unsupervisedtree():
     n_samples = 10
     n_classes = 2
-    X, y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=2, random_state=1234)
+    X, y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=2, random_state=12345)
 
-    clf = UnsupervisedDecisionTree(random_state=1234)
+    clf = UnsupervisedDecisionTree(random_state=12345)
     clf.fit(X)
     sim_mat = clf.affinity_matrix_
 
@@ -62,17 +62,18 @@ def test_unsupervisedtree():
     assert score > 0.05
 
 @pytest.mark.parametrize("name,Tree", CLF_TREES.items())
-def test_iris(name, Tree):
+@pytest.mark.parametrize("criterion", ("twomeans", "fastbic"))
+def test_iris(name, Tree, criterion):
     # Check consistency on dataset iris.
     for criterion in CLF_CRITERIONS:
-        clf = Tree(criterion=criterion, random_state=0)
+        clf = Tree(criterion=criterion, random_state=12345)
         clf.fit(iris.data, iris.target)
         score = accuracy_score(clf.predict(iris.data), iris.target)
         assert score > 0.3, "Failed with {0}, criterion = {1} and score = {2}".format(
             name, criterion, score
         )
 
-        clf = Tree(criterion=criterion, max_features=2, random_state=0)
+        clf = Tree(criterion=criterion, random_state=12345)
         clf.fit(iris.data, iris.target)
         score = accuracy_score(clf.predict(iris.data), iris.target)
         assert score > 0.2, "Failed with {0}, criterion = {1} and score = {2}".format(
