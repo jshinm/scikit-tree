@@ -11,7 +11,7 @@ from sktree import UnsupervisedRandomForest
 
 CLF_CRITERIONS = ("twomeans", "fastbic")
 
-FOREST_CLASSIFIERS = {
+FOREST_CLUSTERS = {
     "UnsupervisedRandomForest": UnsupervisedRandomForest,
 }
 
@@ -60,16 +60,16 @@ def test_urf():
 
 def check_iris_criterion(name, criterion):
     # Check consistency on dataset iris.
-    ForestClassifier = FOREST_CLASSIFIERS[name]
+    ForestClassifier = FOREST_CLUSTERS[name]
 
-    clf = ForestClassifier(n_estimators=10, criterion=criterion, random_state=1)
+    clf = ForestClassifier(n_estimators=10, criterion=criterion, random_state=12345)
     clf.fit(iris.data, iris.target)
     score = accuracy_score(clf.predict(iris.data), iris.target)
     # score = clf.score(iris.data, iris.target)
     assert score > 0.3, "Failed with criterion %s and score = %f" % (criterion, score)
 
     clf = ForestClassifier(
-        n_estimators=10, criterion=criterion, max_features=2, random_state=1
+        n_estimators=10, criterion=criterion, random_state=12345
     )
     clf.fit(iris.data, iris.target)
     score = accuracy_score(clf.predict(iris.data), iris.target)
