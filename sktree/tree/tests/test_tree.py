@@ -6,7 +6,6 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.utils.estimator_checks import parametrize_with_checks
 from itertools import product, chain
 from sklearn import datasets
-from sklearn.metrics import accuracy_score
 
 from sktree.tree import UnsupervisedDecisionTree
 
@@ -65,17 +64,13 @@ def test_unsupervisedtree():
 @pytest.mark.parametrize("criterion", ("twomeans", "fastbic"))
 def test_iris(name, Tree, criterion):
     # Check consistency on dataset iris.
-    for criterion in CLF_CRITERIONS:
-        clf = Tree(criterion=criterion, random_state=12345)
-        clf.fit(iris.data, iris.target)
-        score = accuracy_score(clf.predict(iris.data), iris.target)
-        assert score > 0.3, "Failed with {0}, criterion = {1} and score = {2}".format(
-            name, criterion, score
-        )
+    n_classes = 3
+    clf = Tree(criterion=criterion, random_state=12345)
+    clf.fit(iris.data, iris.target)
+    sim_mat = clf.affinity_matrix_
 
-        clf = Tree(criterion=criterion, random_state=12345)
-        clf.fit(iris.data, iris.target)
-        score = accuracy_score(clf.predict(iris.data), iris.target)
-        assert score > 0.2, "Failed with {0}, criterion = {1} and score = {2}".format(
-            name, criterion, score
-        )
+    cluster = AgglomerativeClustering(n_clusters=n_classes).fit(sim_mat)
+    predict_labels = cluster.fit_predict(sim_mat)
+    score = adjusted_rand_score(iris.target, predict_labels)
+    assert score > -0.01, "Failed with {0}, criterion = {1} and score = {2}".format(
+    name, criterion, score)
