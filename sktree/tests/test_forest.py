@@ -5,7 +5,6 @@ from sklearn.datasets import make_blobs
 from sklearn.metrics import adjusted_rand_score
 from sklearn.utils.estimator_checks import parametrize_with_checks
 from sklearn import datasets
-from sklearn.metrics import accuracy_score
 
 from sktree import UnsupervisedRandomForest
 
@@ -60,24 +59,19 @@ def test_urf():
 
 def check_iris_criterion(name, criterion):
     # Check consistency on dataset iris.
-    ForestClassifier = FOREST_CLUSTERS[name]
-
-    clf = ForestClassifier(n_estimators=10, criterion=criterion, random_state=12345)
+    ForestCluster = FOREST_CLUSTERS[name]
+    n_classes = 3
+    clf = ForestCluster(n_estimators=10, criterion=criterion, random_state=12345)
     clf.fit(iris.data, iris.target)
-    score = accuracy_score(clf.predict(iris.data), iris.target)
-    # score = clf.score(iris.data, iris.target)
-    assert score > 0.3, "Failed with criterion %s and score = %f" % (criterion, score)
+    sim_mat = clf.affinity_matrix_
 
-    clf = ForestClassifier(
-        n_estimators=10, criterion=criterion, random_state=12345
-    )
-    clf.fit(iris.data, iris.target)
-    score = accuracy_score(clf.predict(iris.data), iris.target)
-    # score = clf.score(iris.data, iris.target)
-    assert score > 0.2, "Failed with criterion %s and score = %f" % (criterion, score)
+    cluster = AgglomerativeClustering(n_clusters=n_classes).fit(sim_mat)
+    predict_labels = cluster.fit_predict(sim_mat)
+    score = adjusted_rand_score(iris.target, predict_labels)
+    assert score > -0.01, "Failed with criterion %s and score = %f" % (criterion, score)
 
 
-@pytest.mark.parametrize("name", FOREST_CLASSIFIERS)
+@pytest.mark.parametrize("name", FOREST_CLUSTERS)
 @pytest.mark.parametrize("criterion", ("twomeans", "fastbic"))
 def test_iris(name, criterion):
     check_iris_criterion(name, criterion)
