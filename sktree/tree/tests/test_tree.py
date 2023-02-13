@@ -9,9 +9,9 @@ from sklearn import datasets
 
 from sktree.tree import UnsupervisedDecisionTree
 
-CLF_CRITERIONS = ("twomeans", "fastbic")
+CLUSTER_CRITERIONS = ("twomeans", "fastbic")
 
-CLF_TREES = {
+TREE_CLUSTERS = {
     "UnsupervisedDecisionTree": UnsupervisedDecisionTree,
 }
 
@@ -39,16 +39,14 @@ def test_sklearn_compatible_estimator(estimator, check):
     check(estimator)
 
 
-def test_unsupervisedtree():
+def check_simulation(name, Tree, criterion):
     n_samples = 10
     n_classes = 2
     X, y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=2, random_state=12345)
 
-    clf = UnsupervisedDecisionTree(random_state=12345)
+    clf = Tree(criterion=criterion, random_state=12345)
     clf.fit(X)
     sim_mat = clf.affinity_matrix_
-
-    print(sim_mat)
 
     # all ones along the diagonal
     assert np.array_equal(sim_mat.diagonal(), np.ones(n_samples))
@@ -60,9 +58,8 @@ def test_unsupervisedtree():
     # a single decision tree does not fit well, but should still have a positive score
     assert score > 0.05
 
-@pytest.mark.parametrize("name,Tree", CLF_TREES.items())
-@pytest.mark.parametrize("criterion", ("twomeans", "fastbic"))
-def test_iris(name, Tree, criterion):
+
+def check_iris(name, Tree, criterion):
     # Check consistency on dataset iris.
     n_classes = 3
     clf = Tree(criterion=criterion, random_state=12345)
@@ -72,5 +69,14 @@ def test_iris(name, Tree, criterion):
     cluster = AgglomerativeClustering(n_clusters=n_classes).fit(sim_mat)
     predict_labels = cluster.fit_predict(sim_mat)
     score = adjusted_rand_score(iris.target, predict_labels)
+    
+    # Two-means and fastBIC criterions doesn't perform well
     assert score > -0.01, "Failed with {0}, criterion = {1} and score = {2}".format(
     name, criterion, score)
+
+
+@pytest.mark.parametrize("name,Tree", TREE_CLUSTERS.items())
+@pytest.mark.parametrize("criterion", CLUSTER_CRITERIONS)
+def test_trees(name, Tree, criterion):
+    check_simulation(name, Tree, criterion)
+    check_iris(name, Tree, criterion)
