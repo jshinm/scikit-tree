@@ -62,16 +62,16 @@ def check_iris_criterion(name, criterion):
     # Check consistency on dataset iris.
     ForestCluster = FOREST_CLUSTERS[name]
     n_classes = 3
-    clf = ForestCluster(n_estimators=10, criterion=criterion, random_state=12345)
+    clf = ForestCluster(criterion=criterion, random_state=12345)
     clf.fit(iris.data, iris.target)
     sim_mat = clf.affinity_matrix_
 
     cluster = AgglomerativeClustering(n_clusters=n_classes).fit(sim_mat)
     predict_labels = cluster.fit_predict(sim_mat)
     score = adjusted_rand_score(iris.target, predict_labels)
-    
-    # Two-means and fastBIC criterions doesn't perform well
-    assert score > -0.01, "Failed with criterion %s and score = %f" % (criterion, score)
+
+    # Two-means and fastBIC criterions perform similarly here
+    assert score > 0.2, "Failed with criterion %s and score = %f" % (criterion, score)
 
 
 @pytest.mark.parametrize("name", FOREST_CLUSTERS)
