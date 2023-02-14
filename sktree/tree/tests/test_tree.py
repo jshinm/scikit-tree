@@ -7,7 +7,7 @@ from sklearn.utils.estimator_checks import parametrize_with_checks
 from itertools import product, chain
 from sklearn import datasets
 
-from sktree.tree import UnsupervisedDecisionTree
+from sktree.tree import UnsupervisedDecisionTree, UnsupervisedObliqueDecisionTree
 
 CLUSTER_CRITERIONS = ("twomeans", "fastbic")
 
@@ -23,7 +23,12 @@ perm = rng.permutation(iris.target.size)
 iris.data = iris.data[perm]
 iris.target = iris.target[perm]
 
-@parametrize_with_checks([UnsupervisedDecisionTree(random_state=12)])
+@parametrize_with_checks(
+    [
+        UnsupervisedDecisionTree(random_state=12),
+        UnsupervisedObliqueDecisionTree(random_state=12),
+    ]
+)
 def test_sklearn_compatible_estimator(estimator, check):
     if check.func.__name__ in [
         # Cannot apply agglomerative clustering on < 2 samples
@@ -45,6 +50,7 @@ def check_simulation(name, Tree, criterion):
     X, y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=2, random_state=12345)
 
     clf = Tree(criterion=criterion, random_state=12345)
+
     clf.fit(X)
     sim_mat = clf.affinity_matrix_
 

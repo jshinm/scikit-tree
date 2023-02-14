@@ -6,7 +6,7 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.utils.estimator_checks import parametrize_with_checks
 from sklearn import datasets
 
-from sktree import UnsupervisedRandomForest
+from sktree import UnsupervisedObliqueRandomForest, UnsupervisedRandomForest
 
 CLF_CRITERIONS = ("twomeans", "fastbic")
 
@@ -22,7 +22,12 @@ perm = rng.permutation(iris.target.size)
 iris.data = iris.data[perm]
 iris.target = iris.target[perm]
 
-@parametrize_with_checks([UnsupervisedRandomForest(random_state=12345)])
+@parametrize_with_checks(
+    [
+        UnsupervisedRandomForest(random_state=12345, n_estimators=50),
+        UnsupervisedObliqueRandomForest(random_state=12345, n_estimators=50),
+    ]
+)
 def test_sklearn_compatible_estimator(estimator, check):
     if check.func.__name__ in [
         # Cannot apply agglomerative clustering on < 2 samples
@@ -36,6 +41,7 @@ def test_sklearn_compatible_estimator(estimator, check):
     check(estimator)
 
 
+
 def check_simulation_criterion(name, criterion):
     n_samples = 100
     n_classes = 2
@@ -43,6 +49,7 @@ def check_simulation_criterion(name, criterion):
     X, y = make_blobs(n_samples=n_samples, centers=n_classes, n_features=2, random_state=2**4)
 
     clf = ForestCluster(criterion=criterion, random_state=12345)
+
     clf.fit(X)
     sim_mat = clf.affinity_matrix_
 
@@ -55,6 +62,7 @@ def check_simulation_criterion(name, criterion):
 
     # XXX: This should be > 0.9 according to the UReRF. However, that could be because they used
     # the oblique projections by default
+
     assert score > 0.6
 
 
@@ -79,3 +87,4 @@ def check_iris_criterion(name, criterion):
 def test_clusters(name, criterion):
     check_simulation_criterion(name, criterion)
     check_iris_criterion(name, criterion)
+
